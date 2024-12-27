@@ -1,101 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>YOLOv8 Web VR (ONNX from GitHub)</title>
+    <title>YOLOv8 Web VR with Webcam</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 </head>
 <body>
+    <!-- A-Frame Scene -->
     <a-scene>
-        <!-- 카메라 -->
-        <a-camera position="0 1.6 0">
-            <a-entity cursor="fuse: true; fuseTimeout: 1000"
-                      geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                      position="0 0 -1"
-                      material="color: white; shader: flat">
-            </a-entity>
-        </a-camera>
+        <!-- Assets -->
+        <a-assets>
+            <video id="camera-feed" autoplay playsinline></video>
+        </a-assets>
 
-        <!-- 배경 -->
+        <!-- Display webcam feed in VR -->
+        <a-video src="#camera-feed" position="0 1.6 -3" width="4" height="3"></a-video>
+
+        <!-- Add sky and basic environment -->
         <a-sky color="#ECECEC"></a-sky>
-
-        <!-- 추론 결과 표시 -->
-        <a-entity id="detection-text" position="0 1 -3" text="value: Loading..."></a-entity>
     </a-scene>
 
+    <!-- JavaScript for Webcam Initialization -->
     <script>
-        // ONNX 모델 로드
-        async function loadModel() {
-            const modelURL = "https://jeongyakyoung.github.io/yolov8-web-vr/best.onnx"; // GitHub에서 모델 URL
-            const session = await ort.InferenceSession.create(modelURL);
-            console.log('Model loaded');
-            return session;
-        }
-
-        // 웹캠 초기화
         async function setupCamera() {
-            const video = document.createElement('video');
-            video.width = 640;
-            video.height = 480;
+            try {
+                // Request webcam access
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 } // Camera resolution
+                });
 
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 640, height: 480 }
-            });
+                // Assign stream to the video element
+                const video = document.querySelector("#camera-feed");
+                video.srcObject = stream;
 
-            video.srcObject = stream;
-            await video.play();
-            return video;
-        }
-
-        // YOLO 추론
-        async function detectObjects(session, video) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 640;
-            canvas.height = 480;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 640, 480);
-
-            const imageData = ctx.getImageData(0, 0, 640, 480);
-            const input = new Float32Array(imageData.data.length / 4);
-
-            for (let i = 0; i < input.length; i++) {
-                input[i] = imageData.data[i * 4] / 255.0; // Normalize
+                console.log("Webcam successfully connected!");
+            } catch (error) {
+                console.error("Failed to access the camera:", error);
+                alert("Camera access is required. Please check your browser settings.");
             }
-
-            const tensor = new ort.Tensor('float32', input, [1, 3, 640, 640]);
-            const results = await session.run({ images: tensor });
-
-            return results;
         }
 
-        // 메인 실행
-        async function main() {
-            const session = await loadModel(); // GitHub에서 ONNX 모델 로드
-            const video = await setupCamera(); // 웹캠 초기화
-
-            document.body.appendChild(video); // 웹캠 화면 추가
-
-            const detectionText = document.querySelector('#detection-text');
-
-            async function processFrame() {
-                const results = await detectObjects(session, video);
-
-                // 추론 결과를 처리
-                const boxes = results.boxes.data; // 바운딩 박스 좌표
-                const scores = results.scores.data; // 신뢰도
-                const classes = results.classes.data; // 클래스 ID
-
-                detectionText.setAttribute('text', `value: Detected: ${classes.length} objects`);
-
-                // 다음 프레임 처리
-                requestAnimationFrame(processFrame);
-            }
-
-            processFrame();
-        }
-
-        main();
+        // Initialize webcam
+        setupCamera();
     </script>
 </body>
 </html>
