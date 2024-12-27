@@ -90,40 +90,15 @@
     
         // Debug: Log raw output
         console.log('Raw results:', results);
+        console.log('Output tensor dims:', results.output0.dims);
+        console.log('First 10 values of output tensor:', results.output0.data.slice(0, 10));
     
         // Parse YOLOv8 output
-        const parseYOLOOutput = (tensor, confidenceThreshold = 0.5) => {
-            const [batchSize, numPredictions, attributes] = tensor.dims;
-    
-            if (attributes !== 6) {
-                console.error('Unexpected tensor attribute size:', attributes);
-                return { boxes: [], scores: [], classes: [] };
-            }
-    
-            const data = tensor.data;
-            const boxes = [];
-            const scores = [];
-            const classes = [];
-    
-            for (let i = 0; i < numPredictions; i++) {
-                const offset = i * attributes;
-                const [x, y, w, h, confidence, classID] = data.slice(offset, offset + attributes);
-    
-                if (confidence > confidenceThreshold) {
-                    boxes.push([x, y, w, h]);
-                    scores.push(confidence);
-                    classes.push(classID);
-                }
-            }
-    
-            return { boxes, scores, classes };
-        };
-    
         const parsedResults = parseYOLOOutput(results.output0);
         console.log('Parsed results:', parsedResults);
     
         return parsedResults;
-        }
+    }
 
         
         // 메인 실행
