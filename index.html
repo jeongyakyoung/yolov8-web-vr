@@ -26,7 +26,7 @@
     <script>
         // ONNX 모델 로드
         async function loadModel() {
-            const modelURL = "https://raw.githubusercontent.com/username/yolov8-web/main/best.onnx"; // GitHub에서 모델 URL
+            const modelURL = "https://jeongyakyoung.github.io/yolov8-web-vr/best.onnx"; // GitHub에서 모델 URL
             const session = await ort.InferenceSession.create(modelURL);
             console.log('Model loaded');
             return session;
