@@ -61,6 +61,7 @@
         }
 
         // YOLO 추론
+                // YOLO 추론
         async function detectObjects(session, video) {
             const canvas = document.createElement('canvas');
             canvas.width = 640; // YOLO 모델이 기대하는 정사각형 크기
@@ -82,8 +83,14 @@
                 input[i + 2 * 640 * 640] = imageData.data[offset + 2] / 255.0; // Blue
             }
 
+            // Debug: Log input data
+            console.log('Input data (first 10 values):', input.slice(0, 10));
+
             // Create a tensor for the ONNX model
             const tensor = new ort.Tensor('float32', input, [1, 3, 640, 640]);
+
+            // Debug: Log tensor shape
+            console.log('Tensor shape:', tensor.dims);
 
             // Run the model and get results
             const results = await session.run({ images: tensor });
@@ -93,7 +100,6 @@
 
             return results;
         }
-
         // 메인 실행
         async function main() {
             const session = await loadModel(); // GitHub에서 ONNX 모델 로드
