@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YOLOv8 Web VR with Webcam</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+</head>
+<body>
+    <!-- A-Frame Scene -->
+    <a-scene>
+        <!-- Assets -->
+        <a-assets>
+            <video id="camera-feed" autoplay playsinline></video>
+        </a-assets>
+
+        <!-- Display webcam feed in VR -->
+        <a-video src="#camera-feed" position="0 1.6 -3" width="4" height="3"></a-video>
+
+        <!-- Add sky and basic environment -->
+        <a-sky color="#ECECEC"></a-sky>
+    </a-scene>
+
+    <!-- JavaScript for Webcam Initialization -->
+    <script>
+        async function setupCamera() {
+            try {
+                // Request webcam access
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 } // Camera resolution
+                });
+
+                // Assign stream to the video element
+                const video = document.querySelector("#camera-feed");
+                video.srcObject = stream;
+
+                console.log("Webcam successfully connected!");
+            } catch (error) {
+                console.error("Failed to access the camera:", error);
+                alert("Camera access is required. Please check your browser settings.");
+            }
+        }
+
+        // Initialize webcam
+        setupCamera();
+    </script>
+</body>
+</html>
