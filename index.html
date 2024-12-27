@@ -61,8 +61,7 @@
         }
 
         // YOLO 추론
-                // YOLO 추론
-        async function detectObjects(session, video) {
+            async function detectObjects(session, video) {
             const canvas = document.createElement('canvas');
             canvas.width = 640; // YOLO 모델이 기대하는 정사각형 크기
             canvas.height = 640;
@@ -83,14 +82,8 @@
                 input[i + 2 * 640 * 640] = imageData.data[offset + 2] / 255.0; // Blue
             }
 
-            // Debug: Log input data
-            console.log('Input data (first 10 values):', input.slice(0, 10));
-
             // Create a tensor for the ONNX model
             const tensor = new ort.Tensor('float32', input, [1, 3, 640, 640]);
-
-            // Debug: Log tensor shape
-            console.log('Tensor shape:', tensor.dims);
 
             // Run the model and get results
             const results = await session.run({ images: tensor });
@@ -98,8 +91,32 @@
             // Debug: Log raw results
             console.log('Raw results:', results);
 
-            return results;
+            // Parse YOLOv8 ONNX model output
+            const output = results.output0.data;
+            const numDetections = output.length / 6; // Assuming each detection has 6 values [x, y, w, h, score, class]
+
+            const boxes = [];
+            const scores = [];
+            const classes = [];
+
+            for (let i = 0; i < numDetections; i++) {
+                const offset = i * 6;
+                const [x, y, w, h, score, classID] = output.slice(offset, offset + 6);
+
+                if (score > 0.5) { // Only consider detections with confidence > 0.5
+                    boxes.push([x, y, w, h]);
+                    scores.push(score);
+                    classes.push(classID);
+                }
+            }
+
+            // Debug: Log parsed results
+            console.log('Boxes:', boxes, 'Scores:', scores, 'Classes:', classes);
+
+            return { boxes, scores, classes };
         }
+
+        
         // 메인 실행
         async function main() {
             const session = await loadModel(); // GitHub에서 ONNX 모델 로드
