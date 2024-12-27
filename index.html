@@ -74,7 +74,7 @@
             const imageData = ctx.getImageData(0, 0, 640, 640);
             const input = new Float32Array(640 * 640 * 3); // YOLO expects RGB data
 
-            // Rearrange the image data to RGB channels
+            // Convert RGBA to RGB and normalize the values
             for (let i = 0; i < 640 * 640; i++) {
                 const offset = i * 4; // RGBA channels in imageData
                 input[i] = imageData.data[offset] / 255.0; // Red
@@ -87,6 +87,9 @@
 
             // Run the model and get results
             const results = await session.run({ images: tensor });
+
+            // Debug: Log raw results
+            console.log('Raw results:', results);
 
             return results;
         }
@@ -106,11 +109,15 @@
             async function processFrame() {
                 const results = await detectObjects(session, video);
 
-                // 추론 결과를 처리
+                // Parse results
                 const boxes = results.boxes?.data || []; // 바운딩 박스 좌표
                 const scores = results.scores?.data || []; // 신뢰도
                 const classes = results.classes?.data || []; // 클래스 ID
 
+                // Debug: Log parsed results
+                console.log('Boxes:', boxes, 'Scores:', scores, 'Classes:', classes);
+
+                // Update detection text
                 detectionText.setAttribute('text', `value: Detected: ${classes.length} objects`);
 
                 // 다음 프레임 처리
