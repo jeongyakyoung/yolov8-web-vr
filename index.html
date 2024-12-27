@@ -16,6 +16,12 @@
             </a-entity>
         </a-camera>
 
+        <!-- 웹캠 피드 표시 -->
+        <a-assets>
+            <video id="camera-feed" autoplay playsinline loop></video>
+        </a-assets>
+        <a-video src="#camera-feed" position="0 1.6 -3" width="4" height="3"></a-video>
+
         <!-- 배경 -->
         <a-sky color="#ECECEC"></a-sky>
 
@@ -39,9 +45,7 @@
                     video: { width: 640, height: 480 }
                 });
 
-                const video = document.createElement('video');
-                video.width = 640;
-                video.height = 480;
+                const video = document.querySelector("#camera-feed");
                 video.srcObject = stream;
 
                 video.onloadedmetadata = () => {
@@ -58,20 +62,19 @@
 
         // YOLO 추론
         async function detectObjects(session, video) {
-            // Create a canvas to preprocess the image
             const canvas = document.createElement('canvas');
             canvas.width = 640; // YOLO 모델이 기대하는 정사각형 크기
             canvas.height = 640;
             const ctx = canvas.getContext('2d');
 
             // Draw the video frame onto the canvas
-            ctx.drawImage(video, 0, 0, 640, 640); // Resize the image to 640x640
+            ctx.drawImage(video, 0, 0, 640, 640);
 
             // Get image data from the canvas
             const imageData = ctx.getImageData(0, 0, 640, 640);
             const input = new Float32Array(640 * 640 * 3); // YOLO expects RGB data
 
-            // Convert RGBA to RGB and normalize the values
+            // Rearrange the image data to RGB channels
             for (let i = 0; i < 640 * 640; i++) {
                 const offset = i * 4; // RGBA channels in imageData
                 input[i] = imageData.data[offset] / 255.0; // Red
@@ -97,8 +100,6 @@
                 console.error("Webcam initialization failed. Exiting...");
                 return;
             }
-
-            document.body.appendChild(video); // 웹캠 화면 추가
 
             const detectionText = document.querySelector('#detection-text');
 
