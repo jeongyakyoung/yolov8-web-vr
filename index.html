@@ -35,18 +35,15 @@
         // 웹캠 초기화
         async function setupCamera() {
             try {
-                // 웹캠 스트림 요청
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { width: 640, height: 480 }
                 });
 
-                // 비디오 요소 생성 및 스트림 연결
                 const video = document.createElement('video');
                 video.width = 640;
                 video.height = 480;
                 video.srcObject = stream;
 
-                // 비디오 준비 완료 후 재생
                 video.onloadedmetadata = () => {
                     video.play();
                     console.log("Webcam successfully connected!");
@@ -61,21 +58,31 @@
 
         // YOLO 추론
         async function detectObjects(session, video) {
+            // Create a canvas to preprocess the image
             const canvas = document.createElement('canvas');
-            canvas.width = 640;
-            canvas.height = 480;
-
+            canvas.width = 640; // YOLO 모델이 기대하는 정사각형 크기
+            canvas.height = 640;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, 640, 480);
 
-            const imageData = ctx.getImageData(0, 0, 640, 480);
-            const input = new Float32Array(imageData.data.length / 4);
+            // Draw the video frame onto the canvas
+            ctx.drawImage(video, 0, 0, 640, 640);
 
-            for (let i = 0; i < input.length; i++) {
-                input[i] = imageData.data[i * 4] / 255.0; // Normalize
+            // Get image data from the canvas
+            const imageData = ctx.getImageData(0, 0, 640, 640);
+            const input = new Float32Array(640 * 640 * 3); // YOLO expects RGB data
+
+            // Rearrange the image data to RGB channels
+            for (let i = 0; i < 640 * 640; i++) {
+                const offset = i * 4; // RGBA channels in imageData
+                input[i] = imageData.data[offset] / 255.0; // Red
+                input[i + 640 * 640] = imageData.data[offset + 1] / 255.0; // Green
+                input[i + 2 * 640 * 640] = imageData.data[offset + 2] / 255.0; // Blue
             }
 
+            // Create a tensor for the ONNX model
             const tensor = new ort.Tensor('float32', input, [1, 3, 640, 640]);
+
+            // Run the model and get results
             const results = await session.run({ images: tensor });
 
             return results;
